@@ -1,0 +1,131 @@
+2024.09.25.
+
+# DOM을 꼭 사용해야 하는 상황, Dom에 직접적으로 접근해야 할 때 ref사용
+- 특정 input에 포커스 주기
+- 스크롤 박스 조작하기
+- canvas 요소에 그림그리기 등
+
+# ref를 사용하는 2가지 방법
+1. 콜 백 함수를 통한 ref설정 
+<input ref = {(ref) => {this.input = ref}} />
+input id 를 매개변수로 넘겨서 this.input에
+
+-------------------------------------------------------------------------
+
+import React, { Component } from "react";
+import "./ValidationSample.css";
+
+class ValidationSample_c extends Component {
+  state = {
+   password: "", // 패스워드를 입력할 수 있는 변수
+   clicked: false, // boolean 초기화
+   validated: false, // success, failure를 확인할 수 있는 변수.
+  };
+  handleChange = (e) => {
+   this.setState({
+    password: e.target.value,  // event가 발생하는 input태그.value 가리킴
+   });
+  };
+  handleButtonClick = () => {
+   this.setState({
+    clicked: true,
+    validated: this.state.password === "0000", // 검증, 확인용도
+   });
+   this.bbb.focus(); //focus js 깜빡이는 메서드, this.bb는 input에 foucs함수  실행
+  };
+  render() {
+   return (
+    <div>
+     <input ref={aaa => (this.bbb = aaa)} // ref의 특성 = aaa  -> bbb, input태그의 이름은 bbb = aaa의 속성을 받음,
+      // 실무에선 aaa에 ref, bbb엔 input
+  type="password" value={this.state.password} onChange={this.handleChange}
+      // 아래 className = css에서 성공 or 실패로 들어감, 클릭 했을 때 true? false?
+      className={this.state.clicked ? this.state.validated ? "success" : "failure" : ""}/>
+     <button onClick={this.handleButtonClick}>검증하기</button>
+    </div>
+   );
+  }
+}
+export default ValidationSample_c;
+
+-------------------------------------------------------------------------
+
+input = React.createRef();
+this.input.current.focus(); // current 속성 사용하여 접근해야함
+<input ref={this.input}컴포넌트에도 ref 달 수 있다
+
+컴포넌트에도 ref 달 수 있다
+<MyComponent ref={(ref) => {this.myComponent=ref}}/>
+이렇게 하면 MyComponent 내부의 메서드 및 멤버 변수에도 접근할 수 있다
+MyComponent.handleClick, MyComponent.input 등 
+
+-------------------------------------------------------------------------
+
+import React, { Component } from "react";
+import ScrollBox_c from "./ScrollBox_c";
+
+class App extends Component {
+  render() {
+   return (
+    <div>
+     <ScrollBox_c ref={(ref) => (this.scrollBox_c = ref)} />
+     <button onClick={() => this.scrollBox_c.scrollToBottom()}>
+      맨 밑으로</button></div>
+   );
+  }
+}
+export default App;
+
+-------------------------------------------------------------------------
+
+import React, { Component } from 'react';
+
+class ScrollBox_c extends Component {
+   scrollToBottom = () => {
+     const { scrollHeight, clientHeight } = this.box; //this.box = div 태그
+     // 버튼을 클릭하면 스크롤 위치가 맨 마지막으로 이동해라
+     // scrollHeight -clientHeight = 스크롤바 길이(350)
+     this.box.scrollTop = scrollHeight - clientHeight;};
+   render() {
+     const style = {
+       border: '1px solid black',
+       height: '300px',
+       width: '300px',
+       overflow: 'auto',
+       position: 'relative',
+      };
+      const innerStyle = {
+       width: '100%',
+       height: '650px',
+       background: 'linear-gradient(white, black)',
+      };
+     return (
+       <div style={style} ref={(ref) => {this.box = ref;}}>
+         <div style={innerStyle}/>
+       </div>
+     );
+   }
+}
+export default ScrollBox_c;
+
+-------------------------------------------------------------------------
+
+import React from 'react';
+
+const IterationSample = () => {
+   const names = ["돌", "도올", "돌돌", "두올"];
+   const nameList = names.map((name) => <li>{name}</li>);
+   return <ul>{nameList}</ul>;
+};
+
+export default IterationSample;
+
+위와 같이 입력하면 개발자 도구에
+react-jsx-dev-runtime.development.js:103 Warning: 
+Each child in a list should have a unique "key" prop. : 고유한 "키" 있어야 함
+
+유동적인 데이터를 다룰 때 원소를 새로 생성, 제거, 수정할 수도 있는데 key가 없
+을 때 Virtual Dom을 비교하는 과정에서 리스트를 순차적으로 비교하면서 변화를
+감지함 --> 키가 있다면 어떤 변화가 일어났는지 훨씬 빠르게 알아낼 수 있다
+
+-------------------------------------------------------------------------
