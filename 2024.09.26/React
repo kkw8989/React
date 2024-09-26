@@ -1,0 +1,348 @@
+2024.09.26
+
+useEffect(() => {
+    // 마운트 될 때
+    console.log(`effect`);  --> 빨간색 : 마운트 공간
+    console.log(name);
+    return () => {
+      // 언마운트 되기 전이나 업데이트 되기 직전에 작업 수행
+      console.log(`clean up`);
+      console.log(name);
+    };}, [name]);  --> [업데이트 하고 싶은 변수명]
+import React, { useEffect, useState } from "react";
+
+const Info = () => {
+  const [name, setName] = useState("");
+  const [nickname, setNickname] = useState("");
+
+  useEffect(() => {
+   console.log(`effect`);
+   console.log(name);
+   return () => {
+    // 언마운트 되기 전이나 업데이트 되기 직전에 작업 수행
+    console.log(`clean up`);
+    console.log(name);
+   };
+  }, [name]);
+
+  const onChangeName = (e) => {
+   setName(e.target.value);
+  };
+  const onChangeNickname = (e) => {
+   setNickname(e.target.value);
+  };
+  return (
+   <div>
+    <div>
+     <input value={name} onChange={onChangeName} placeholder="이름" />
+     <br />
+     <input
+      value={nickname}
+      onChange={onChangeNickname}
+      placeholder="닉네임"
+     />
+    </div>
+    <div>
+     <div>
+      <b>이름:</b>
+      {name}
+     </div>
+     <div>
+      <b>닉네임:</b>
+      {nickname}
+     </div>
+    </div>
+   </div>
+  );
+};
+export default Info;
+
+import { useState } from "react";
+import Counter from "./Counter";
+import Info from "./Info";
+
+function App() {
+  // Hooks, visible에 초기값 = false
+  const [visible, setVisible] = useState(false); 
+  return (
+   <div>
+     <h2>useState를 여러 번 사용하기</h2>
+     <button onClick={() => { setVisible(!visible);}}>
+      { visible ? '숨기기' : '보이기'} // visible 초기 값이 false라서 보이기 
+     </button> <hr/>
+     {visible &&<Info/>} // visble true면 Info실행 -> Info 보여주면 mount 됨
+  -> effect clean up effect 뜸 -> 숨기기 누르면 false 됨 -> 생명주기 끝나서
+   clean up 뜸
+   </div>
+  );
+}export default App;
+
+<React.StrictMode> : 엄격하게 2번 검사 -> 렌더링 2번 됨 : 리엑트에서 제공하는 검사 도
+구인데 개발 모드일 때 디버그를 하며 해당 태그로 감싸져 있는 부분은 자손까지 검사를 함
+안전하지 않은 생명주기를 가진 컴포넌트라든지, 권장되지 않는 부분이 있다든지 배포 후
+문제가 될 만한 이슈들을 미리 잡는 모드, 테스트 후 잘 동작하면 지우고 배포
+useReducer : 상태 관리하는 훅(여러 개 가능), useState보다 더 다양한 컴포넌트의 상황에
+따라 다양한 상태를 다른 값으로 업데이트 해주고 싶을 때 사용하는 Hook이다
+state데이터의 수정방법을 미리 정의하는 함수
+state 초기 값과 데이터 수정 방법을 넣을 수 있다
+reducer는 현재상태(초기 값), 데이터 수정방법을 위해 필요한 정보를 담은 액션 값을 전달
+받아야 새로운 상태를 반환할 수 있고 새로운 상태를 만들 때는 반드시 불변성 지켜야 함
+
+function reducer(state, action){
+   return{...} // 불변성을 지키면서 업데이트한 새로운 상태를 반환한다.
+}
+액션 값은 주로 (Increment)
+{  // 객체로 
+   type:’INCREMENT’,
+   // 다른 값들이 필요하다면 추가로 들어감
+}
+useReducer에서 사용하는 액션객체는 반드시 type을 사용할 필요x, 문자열, 숫자 O
+리덕스에서 사용하는 액션객체에는 반드시 type이 필요
+import React, { useReducer, useState } from "react";
+
+function reducer(state, action){
+  // action.type에 따라 다른 작업 수행
+switch (action.type){
+  case 'INCREMENT' :
+   return { value : state.value + 1};
+  case 'DECREMENT' :
+   return { value : state.value - 1};  
+  default:
+   //아무것도 해당되지 않을 때 기존 상태 반환
+   return state;
+   }
+}
+
+const Counter = () => {
+  // useReducer(reducer로 호출하는 함수명,{객체 초기값})
+  // state = {value:0}
+  // dispatch는 액션을 부르는 함수 
+  const [state, dispatch] = useReducer(reducer,{value:0});
+  return (
+   <div>
+    <p>
+     현재 카운터 값은 <b>{state.value}</b>
+    </p>
+    <button onClick={() => dispatch({type: 'INCREMENT'})}>+1</button>
+    <button onClick={() => dispatch({type: 'DECREMENT'})}>-1</button>
+   </div>
+   // {type: 'DECREMENT'} : 액션값 받음
+  );
+};
+export default Counter;
+
+------------------------------------------------------------------------------------------------------
+
+import { useReducer } from "react";
+
+function reducer(state, action){
+  return{
+   ...state,
+  [action.name]:action.value
+  }
+}
+const Info = () => {
+  // useReducer(reducer로 호출하는 함수명, {객체의 초기값})
+  // state={name:'', nickname: ''}
+  const [state, dispatch] = useReducer(reducer,{name:'', nickname: '' });
+  const [name, nickname] = state;
+
+  // e.target : onChange 이벤트가 일어난 태그 가리킴
+  // dispatch는 액션객체를 담아서 reducer함수에 전달
+  const onChange = (e) => {dispatch(e.target);};
+
+  return (
+   <div>
+    <div>
+     <input name={name} onChange={onChange} placeholder="이름" />
+     <br />
+     <input name={nickname} onChange={onChange} placeholder="닉네임"/>
+    </div>
+    <div>
+     <div><b>이름:</b>{name}</div>
+     <div><b>닉네임:</b>{nickname}</div>
+    </div>
+   </div>
+  );
+};
+export default Info;
+
+
+
+------------------------------------------------------------------------------------------------------
+
+// 주어진 상태를 고쳐나가는 함수(현재 상태를 새로운 상태로 변경 할 때 사용
+// [주어진 상태].reduce([특정규칙] => 변경 된 상태)
+const array1 = [1, 2, 3, 4];
+
+// 0 + 1 + 2 + 3 + 4
+const init = 0;
+const sum = array1.reduce(
+  (prev, cur) => prev + cur,
+  init
+);
+console.log(sum);
+-> (1, 2 => 1 + 2), (3, 3 => 3 + 3), (6, 4 => 6 + 4)
+init = 초기 값인데 무조건 더하고 시작
+
+
+------------------------------------------------------------------------------------------------------
+4. useMemo : 함수 컴포넌트 내부에서 발생하는 연산 최적화 -> 리렌더링 감지
+
+import React, { useMemo, useState } from "react";
+
+const getAverage = (numbers) => {
+  //[6,4]
+  console.log("평균값 계산 중..");
+  if (numbers.length === 0) return 0;
+  //  [6,4]
+  const sum = numbers.reduce((a, b) => a + b);
+  return sum / numbers.length;
+};
+
+const Average = () => {
+  const [list, setList] = useState([]); // 배열객체 초기화
+  const [number, setNumber] = useState(""); // 문자 초기화
+
+  const onChange = (e) => {
+   setNumber(e.target.value);
+  };
+  const onInsert = () => {
+   //[]에 새로운 객체로 추가
+   // nextList = 정수로 변환한 값을 list배열에 추가해라.
+   //[]->[6]->[6,4]
+   const nextList = list.concat(parseInt(number));
+   setList(nextList); // list객체에 []->[6]으로 업데이트해라.
+   setNumber("");
+  };
+
+  // getAverage함수를 호출하는 list 변수값이 변경 될 때만 리렌더링
+  // list가 동일하다면 재사용
+  const avg = useMemo(() => getAverage(list), [list]);
+
+  return (
+   <div>
+    <input value={number} onChange={onChange} />
+    <button onClick={onInsert}>등록</button>
+    <ul>
+     {list.map((value, index) => (
+      <li key={index}>{value}</li>
+     ))}
+    </ul>
+    <div>
+     <b>평균값:</b>
+     {/* list=[6,4] */}
+     {avg}
+    </div>
+   </div>
+  );
+};
+export default Average;
+
+5 useCallback : useMemo와 상당히 비슷한 함수. 주로 렌더링 성능을 최적화해야 하는 상
+황에서 사용하기 위해 만들어 놨던 함수 재사용 가능
+import React, { useCallback, useMemo, useState } from "react";
+
+const getAverage = (numbers) => {
+  //[6,4]
+  console.log("평균값 계산 중..");
+  if (numbers.length === 0) return 0;
+  //  [6,4]
+  const sum = numbers.reduce((a, b) => a + b);
+  return sum / numbers.length;
+};
+
+const Average = () => {
+  const [list, setList] = useState([]); // 배열객체 초기화
+  const [number, setNumber] = useState(""); // 문자 초기화
+
+  const onChange = useCallback((e) => {
+   setNumber(e.target.value);
+  }, []); // 업데이트 내용이 없으니 함수 재사용 하겠다
+  //컴포넌트가 초기 렌더링 될 때만 함수 생성
+
+  const onInsert = useCallback(() => {
+   //[]에 새로운 객체로 추가
+   // nextList = 정수로 변환한 값을 list배열에 추가해라.
+   //[]->[6]->[6,4]
+   const nextList = list.concat(parseInt(number));
+   setList(nextList); // list객체에 []->[6]으로 업데이트해라.
+   setNumber("");
+  },[number,list]); // number 또는 list가 바뀌었을때만 생성 = 리렌더링
+
+  // getAverage함수를 호출하는 list 변수값이 변경 될 때만 리렌더링
+  // list가 동일하다면 재사용
+  const avg = useMemo(() => getAverage(list), [list]);
+
+  return (
+   <div>
+    <input value={number} onChange={onChange} />
+    <button onClick={onInsert}>등록</button>
+    <ul>
+     {list.map((value, index) => (
+      <li key={index}>{value}</li>
+     ))}
+    </ul>
+    <div>
+     <b>평균값:</b>
+     {/* list=[6,4] */}
+     {avg}
+    </div>
+   </div>
+  );
+};
+
+export default Average;
+
+6. useRef : dom노드나 React component에 직접 접근하기 위해 사용 
+import React, { useCallback, useMemo, useRef, useState } from "react";
+
+const getAverage = (numbers) => {
+  // [6,4]
+  console.log("평균값 계산 중..");
+  if (numbers.length === 0) return 0;
+  const sum = numbers.reduce((a, b) => a + b);
+  return sum / numbers.length;
+};
+
+const Average = () => {
+  const [list, setList] = useState([]); // 배열객체 초기화
+  const [number, setNumber] = useState(""); // 문자 초기화
+  const inputEl = useRef(null);
+
+  const onChange = useCallback((e) => {
+   setNumber(e.target.value);
+  }, []); // 업데이트 내용이 없으니 함수 재사용 하겠다 
+  //컴포넌트가 초기 렌더링 될 때만 함수 생성
+
+  const onInsert = useCallback(() => {
+   //[]에 새로운 객체로 추가
+   // nextList = 정수로 변환한 값을 list배열에 추가해라.
+   //[]->[6]->[6,4]
+   const nextList = list.concat(parseInt(number));
+   setList(nextList); // list객체에 []->[6]으로 업데이트해라.
+   setNumber("");
+   inputEl.current.focus();
+  },[number,list]); // number 또는 list가 바뀌었을때만 생성 = 리렌더링
+
+  // getAverage함수를 호출하는 list 변수값이 변경 될 때만 리렌더링
+  // list가 동일하다면 재사용
+  const avg = useMemo(() => getAverage(list), [list]);
+return (
+   <div>
+    <input ref={inputEl}value={number} onChange={onChange} />
+    <button onClick={onInsert}>등록</button>
+    <ul>
+     {list.map((value, index) => (
+      <li key={index}>{value}</li>
+     ))}
+    </ul>
+    <div>
+     <b>평균값:</b>
+     {/* list=[6,4] */}
+     {avg}
+    </div>
+   </div>
+  );
+};
+export default Average;
