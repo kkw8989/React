@@ -1,0 +1,357 @@
+2024.09.26.
+
+app 내에서 TodoList에 ToListItem을 넣지 않는 것을 추천 -> 나중에 로직이 복잡해짐
+.TodoListItem {
+   padding: 1rem;
+   display: flex;
+   align-items: center; // 세로 중앙 정렬
+   &:nth-child(even) { // 짝수에 흰색
+    background: #f8f9fa;
+   }
+   .checkbox {
+    cursor: pointer;
+    flex: 1; // 차지할 수 있는 영역 모두 차지
+    display: flex;
+    align-items: center; // 세로 중앙 정렬
+    svg {
+     // 아이콘
+     font-size: 1.5rem;
+    }
+    .text {
+     margin-left: 0.5rem;
+     flex: 1; // 차지할 수 있는 영역 모두 차지
+    }
+    &.checked { // 체크되었을 때 보여줄 스타일
+     svg {
+      color: #22b8cf;
+     }
+     .text {
+      color: #adb5bd;
+      text-decoration: line-through;
+     }
+    }
+   }
+   .remove {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    color: #ff6b6b;
+    cursor: pointer;
+    &:hover {
+     color: #ff8787;
+    }
+   }
+  
+   // 엘리먼트 사이사이에 테두리를 넣어줌
+   & + & { // 태그와 태그 사이에 = 형제와 형제 사이에 
+    border-top: 1px solid #dee2e6;
+   }
+  }
+
+-------------------------------------------------------------------------
+
+function App() {
+  const [toods, setTodos] = useState([
+  // 속성값은 toods에 업데이트 내용은 setTodos에
+   {
+    id: 1, text: '리액트의 기초 알아보기', checked: true,
+   },
+   {
+    id: 2, text: '컴포넌트 스타일링 해보기', checked: true, 
+   },
+   { 
+    id: 3, text: '일정 관리 앱 만들어보기', checked: true,
+   },
+  ]);
+  return (
+   <TodoTemplate>
+    <TodoInsert/>
+    <TodoList todos={todos}/> -->  todos를 TodoList에 넘김
+   </TodoTemplate>
+   );
+}
+
+-------------------------------------------------------------------------
+
+const TodoList = ({todos}) => {
+   return (
+     <div className='TodoList'>
+       {todos.map((todo) => ( // id:1, text:‘리액트 기초알아보기’, checke:..
+         <TodoListItem todo={todo} key={todo.id}/>
+       ))}
+     </div>
+   );
+};
+
+-------------------------------------------------------------------------
+
+ const TodoListItem = ({todo}) => { 
+  // 값을 빼 와서 사용하기 위해 비할당문 구조 사용
+  const {text, checked} = todo;
+  return (
+   <div className="TodoListItem">
+    <div className="checkbox">
+     <MdCheckBoxOutlineBlank />
+     <div className="text">{text}</div>
+    
+-------------------------------------------------------------------------
+    
+// package.json에서 classnames가져오고 cn으로 쓰겠다
+// classnames: 조건부 스타일링
+import cn from 'classnames'; 
+import './TodoListItem.scss'
+
+const TodoListItem = ({todo}) => { 
+  // 값을 빼 와서 사용하기 위해 비할당문 구조 사용
+  const {text, checked} = todo;
+  return (
+   <div className="TodoListItem">
+
+    {/* TodoListitem.scss에 있음 */}
+    {/* -> 클래스명: checkbox면 {checked}(객체): 속성 값 적용돼라. */}
+    <div className={cn('checkbox', {checked:checked})}>
+     {checked ? <MdCheckBox/> : <MdCheckBoxOutlineBlank/>}
+classnames : cn함수는 클래스 이름을 조건에 따라 동적으로 표현해주는 함수
+첫 번째 인자는 고정된 클래스 이름 : checkbox
+두 번재 인자는 조건부로 추가할 클래스 속성 이름
+
+checked가 true면 checked라는 클래스 추가되고, false면 추가되지 않음
+기본적으로 checkbox는 적용되어 있고, checked가 true면 추가로 checked클래스 적용
+    
+-------------------------------------------------------------------------------------------------------
+
+const TodoInsert = () => {
+   
+   const [value, setValue] = useState('');
+
+   // useCallback : 함수 재사용
+   const onChange = useCallback((e) => {
+   // aver iist에선 업데이트 처리를 위해 함수 호출을 했는데 
+   // 여기서 안하는 이유는 svg event가 스스로 업데이트 함
+     setValue(e.target.value);
+   }, []); // hooks에서 변하는 값은 [0]에 넣는데 위에 value가 []라서 []씀
+   return (
+     <form className='TodoInsert'>
+       <input vaule ={value}
+       onChange={onChange} // 모든 글자 인식해서 보내기 위해 
+       placeholder="할 일을 입력하세요"/>
+       <button type="submit">
+         <MdAdd/> 
+       </button>
+     </form>
+   );
+};
+
+-------------------------------------------------------------------------
+
+function App() {
+  const [todos, setTodos] = useState([
+   { id: 1, text: '리액트의 기초 알아보기', checked: true,},
+   { id: 2, text: '컴포넌트 스타일링 해보기', checked: true,},
+   { id: 3, text: '일정 관리 앱 만들어 보기', checked: false,},
+  ]);
+   // useRef : 변해야 하는 변수를 지정할 때, useRef(4=초기값, id=3이니까 다음                   값 4로 받음)
+   const nextId = useRef(4);
+
+   // 아래 내용을 재사용 하기 위해 useCallback사용
+   const onInsert = useCallback(
+   (text) => { // 외부에 있는 text 내부에 넣기 위해
+    const todo = {
+     id: nextId.current, // useRef를 쓰려면 current써야함
+     text, // 외부에 있는 text 내부로 받음
+     checked: false,
+    };
+    // {id:4, 할일, checked:false} -> todo에 저장
+    setTodos(todos.concat(todo));
+    nextId.cureent +=1; // nextId 1씩 더하기
+   },
+   [todos], // todos를 업데이트 공간에 받고 리렌더링
+        // 비효율적 why? 3개 있는데 1개 들어가면 3개 전부 다시 리렌더링해야함
+   );
+  return (
+   <TodoTemplate>
+    <TodoInsert onInsert={onInsert} />
+    <TodoList todos={todos} />
+   </TodoTemplate>
+
+-------------------------------------------------------------------------
+
+const TodoInsert = ({onInsert}) => {
+   
+   const [value, setValue] = useState('');
+   // useCallback : 함수 재사용
+   const onChange = useCallback((e) => {
+   // aver iist에선 업데이트 처리를 위해 함수 호출을 했는데 
+   // 여기서 안하는 이유는 svg event가 스스로 업데이트 함
+     setValue(e.target.value);
+   }, []); // hooks에서 변하는 값은 [0]에 넣는데 위에 value가 []라서
+
+   const onSubmit = useCallback(
+     (e) => {
+       onInsert(value); // app.js 에서 onInsert text저장되고 
+       setValue(''); // 비워지고
+       //submit 이벤트는 브라우저에서 새로고침 발생시킴
+       e.preventDefault(); // submit의 이벤트 기본 동작 취소
+       },
+       [onInsert, value],
+     );
+
+   return (
+     // button이나 다른 곳에 역할을 안 주는 이유는 복잡해지기 때문에 form에 줌
+      <form className='TodoInsert' onSubmit={onSubmit}>
+       <input vaule ={value}
+       onChange={onChange} // 모든 글자 인식해서 보내기 위해 
+       placeholder="할 일을 입력하세요"/>
+	{/*  jsx문법, submit이 정확히 동작하려면 form이 있어야함 */}
+       <button type="submit"> 
+         <MdAdd/> 
+       </button>
+     </form>
+   );
+};
+
+
+onSubmit 이벤트는 브라우저를 새로고침 -> e.perventDefault() 사용 -> 새로고침 방지
+onSubmit 대신 onClick 이벤트로 처리할 수 있지만 클릭만 됨 enter의 키 값을 따로 이벤트
+처리해야함. 그래서 클릭과 enter 처리할 수 있는 onSubmit으로 대부분 사용함
+
+UML : app(속성,함수) -> TodoTemplate(a,b) -> TodoInsert 
+unified modeling language 
+
+onInsert가 app에 있는 이유는 실질적인 데이터처리를 app에서 하고 있기때문이고
+onSubmit을 TodoInsert하는 이유는 form이 있어서
+    
+-------------------------------------------------------------------------------------------------------
+    
+- 누르면 삭제되는 기능 
+   
+ // id가 2번인 키값의 todo를 누르면 (2번은 삭제) 
+   // 2번을 제외한 나머지 todo들은 새로운 객체로 생성
+   const onRemove = useCallback(
+   (id) => { // 외부에 있는 id를 받으면
+    // todo를 변경 하기 위해 setTodos이용
+    // todo = {id:4, 할일, checked:false}
+    // 1,2,3,4 != 우리가 선택한 id빼고 새로운 객체 생성
+    setTodos(todos.filter((todo) => todo.id !==id)); 
+   },
+   [todos], // 기존에 있던 todos를 업데이트 해야 돼서 리렌더링
+   );
+
+  App : <TodoList todos={todos} onRemove={onRemove}
+
+   const TodoList = ({todos, onRemove}) => { // onRemove추가
+   const TodoListItem = ({todo, onRemove}) => { // onRemove추가
+	const {id, text, checked} = todo; // id 추가
+	// onClick만들기
+	<div className="remove" onClick={() => onRemove(id)}>
+	}r
+
+react 크롬에서 확장프로그램 f12눌러서 TodoListItem = 4 -> MdcheckBox어쩌고 -> 
+IconBase -> context consumer : 전역에서 사용가능
+-------------------------------------------------------------------------------------------------------
+업데이트 기능
+   const onToggle = useCallback( 
+   (id) => { // 업데이트 할 id를 식별하기 위해
+    setTodos( // todo를 변경 하기 위해 setTodos이용
+     todos.map((todo) =>
+      // todo에 있는 모든 id와 비교하여 선택한 id랑 같으면
+      // id가 3번의 todo를 복사한 뒤, checked만 false->true, true->false
+      // id가 같지 않다면 todo 그대로 나와라
+      todo.id === id ? {...todo, checked : !todo.checked } : todo,
+     ),);},
+   [todos],
+   );
+  <TodoList todos={todos} onRemove={onRemove} onToggle={onToggle}/>
+
+  const TodoList = ({todos, onRemove, onToggle}) => { // onToggle추가
+
+  TodoListItem에서 <divclassName = {cn('checkbox',{checked:checked})}  
+  onClick={()=>onToggle(id)}> 추가
+
+여기까지 CRUD 완성
+                                                     
+-------------------------------------------------------------------------------------------------------
+
+# 많은 데이터 렌더링 하기(컴포넌트의 성능 최적화)
+function createBulkTodos(){
+  const array = [];
+  for (let i=1; i<=2500; i++){
+   array.push({  // array = [{id: 1, text: 할 일 1, checked: false}]
+    id: i,
+    text: `할 일 ${i}`,
+    checked: false,
+   });
+  }
+  return array;
+}
+
+function App() {
+  // createBulkTodos()하면 리렌더링 될 때마다 createBulkTodos함수가 호출 됨
+  // createBulkTodos로 하면 첫 렌더링 될 때만 createBulkTodos함수가 실행 됨
+  const [todos, setTodos] = useState(createBulkTodos);
+
+Chrome에서 f12 -> React Developer tools깔고 -> Profiler -> start Profiling -> 많이 느림
+
+## 느려지는 원인 분석
+컴포넌트는 리렌더링이 많이 발생하면 느려짐. 리렌더링이 발생하는 상황
+1. 자신이 전달받은 props가 변경 될 때
+2. 자신의 stste가 바뀔 때
+3. 부모 컴포넌트가 리렌더링 될 때
+4. forceUpdate 함수가 실행 될 때
+
+-> ‘할 일 1’ 항목은 리렌더링이 돼야 하지만 ~2500개까지 모두 리렌더링이 돼서 느린 것
+불필요한 리렌더링 방지하는 것이 목적 
+
+### React.memo를 사용하여 컴포넌트 성능 최적화
+클래스형에서는 shouldComponentUpdate라는 라이프사이클에서 리렌더링 방지할 수 있음
+React.memo를 사용하면 컴포넌트의 props가 바뀌지 않았다면 리렌더링 하지 않도록 설정
+하여 리렌더링의 성능을 최적화 할 수 있다.
+  
+ TodoListItem에서
+ // todo, onRemove, onToggle 바뀌지 않았다면 리렌더링x
+ export default React.memo(TodoListItem);
+-> 속도 안 바뀜 why? -> App.js에서 [todos] = dependency = 뎊스괄호가 
+계속 리렌더링 되는 중 useState가 많을수록 최악
+
+ App에서
+  const [todos, setTodos] = useState(createBulkTodos);
+
+todos 배열이 업데이트 되면 onRemove, onToggle 함수도 새롭게 바뀜 React.memo를 
+사용하는 것만으로는 컴포넌트의 최적화가 끝나지 않는다. onRemove와 onToggle 함수는
+배열 상태를 업데이트 하는 과정에서 최신 상태의 todos를 참조하기 때문에 todos배열이 
+바뀔 때 마다 함수가 새로 만들어짐
+-> 그럼 어떻게?
+1. useReducer 사용
+2. useState의 함수형 업데이트 기능 사용
+  
+  App에서 
+    const onInsert = useCallback(
+   (text) => { 
+    const todo = {
+     id: nextId.current, 
+     text, 
+     checked: false,
+
+    };
+    setTodos(todos=>todos.concat(todo)); // 1,2,3이 담긴 기존의 todos를 
+	todo에 새롭게 추가 = 저장하는 공간 생김 -> []에 todos넣을 필요 x
+    nextId.cureent +=1;
+   },
+   [], 
+  );
+  
+  const onRemove = useCallback(
+   (id) => { 
+    setTodos(todos=>todos.filter((todo) => todo.id !==id)); 
+   },
+   [], 
+  );
+
+const onToggle = useCallback( 
+   (id) => { 
+    setTodos( 
+     todos=>todos.map((todo) =>
+      todo.id === id ? {...todo, checked : !todo.checked } : todo,
+     ),);},
+   [],
+   );
