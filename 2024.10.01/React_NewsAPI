@@ -1,0 +1,306 @@
+2024.10.01.
+
+공통 레이아웃 만들기
+
+const Layout = () => {
+   return (
+     <div>
+       <header style={{background:'11ghtgray',padding:16, fontSize:24}}>
+         header
+       </header>
+       <main> 
+         <Outlet/> // Layout에 자식으로 오는 것들 header랑 공통으로 보이게
+       </main>
+     </div>
+   );
+};
+
+Home About Profile Layout에서 공통으로 보이게
+
+#리액트 라우터 부가기능
+## useNavigate
+Link 컴포넌트를 사용하지 않고 다른 페이지로 이동해야 하는 상황에 사용하는 hook
+replace 옵션 : 페이지를 이동할 때 현재 페이지를 페이지 기록에 남기지 않는다
+const Layout = () => {
+   const navigate = useNavigate();
+   const goBack = () => { navigate(-1); }; // 이전 페이지로 이동
+   const goArticles = )=>{ navigate('/articles', {replace:true}); }; 
+   // articles 경로로 이동
+   //replace : home -> about -> 게시글 목록 -> 뒤로가기 -> home
+  return (
+   <div>
+    <header style={{background: "lightgray", padding: 16, fonsSize: 24 }}>
+     <button onClick={goBack}>뒤로가기</button>
+     <button onClick={goArticles}>게시글 목록</button>
+    </header>
+    <main>
+     <Outlet /> {/* Layout에 자식으로 오는 것들 header랑 공통으로 보이게 */}
+    </main>
+   </div>);};
+
+NavLink : 링크에서 사용하는 경로가 현재 라우트의 경로와 일치하는 경우 스타일 또는 css 
+클래스를 적용하는 컴포넌트
+style과 className은 {isActive : boolean}을 파라미터로 전달받는 함수 타입의 값을 전달함.
+
+const Articles = () =>{
+   return(
+     <div>
+       <ul>
+         <ArticlesItem id={1} />
+         <ArticlesItem id={2} />
+         <ArticlesItem id={3} />
+       </ul>
+       <Outlet/>
+     </div>
+   );
+};
+
+const ArticlesItem = ({id}) => {
+   const activeStyle = { color:'green', fontSize:21 };
+
+   return (
+     <li>
+       <NavLink to={`/articles/${id}`} 
+       style={({isActive}) =>
+       (isActive? activeStyle : undefined)}>게시글 {id}</NavLink>
+     </li> 
+     );
+   };
+
+잘못된 페이지 삽입
+app.js{
+ ...
+<Route path="*" element={<NotFound />} />
+*은 wild card의 문자 : 아무 텍스트나 매칭이 됨, 위에 나온 모든 경로 제외함 
+
+로그인 화면, 마이페이지 삽입
+const Login = () => {
+   return (
+     <div>로그인 페이지</div>
+   );
+};
+
+const MyPage = () => {
+   const isLoggedIn = false;
+
+   if(!isLoggedIn){ // 로그인 안하면 login 페이지로 이동 현재 페이지는 기록x */}
+     return <Navigate to = '/login' replace={true} />
+   } 
+   return <div>마이페이지</div>
+};
+
+
+외부 api 연동하여 뉴스 UI만들기
+비동기 : 동시에 데이터 처리, 동기 : 순차 처리
+비동기 이해 0> axios로 api 호출해서 데이터 받아오기 -> news api API 키를 발급 
+ -> 뉴스UI 만들기 -> 데이터 연동 -> 카테고리 기능 구현 -> spa로 적용
+
+api key：f12054cedcc34a278b695e8b823e6434
+
+yarn add axios
+
+-------------------------------------------------------------------------------------------------------
+
+axios로 api 호출해서 데이터 받아오기(가독성 떨어지는 ver.)
+const App = () => {
+  const [data, setData] = useState(null);
+  const onClick = () =>{
+   axios.get('https://jsonplaceholder.typicode.com/todos')
+	.then(response =>{ setData(response.data);});
+    // promise에서 리솔브 되면 then, -> 데이터 잘 받으면
+    // 링크에서 받아온 data response에 받고 setData통해서 [data,]에 넣음
+  };
+
+  return(
+   <div>
+    <div>
+     <button onClick={onClick}>불러오기</button>
+    </div>
+    {data &&<textarea rows={7} value={JSON.stringify(data, null, 2)} readOnly={true}/>}
+    // data 값이 있으면 true -> 출력, 줄 수 7줄, data형식: JSON 용량 적음
+    // stringify 메서드를 이용해서 JSON 타입으로 바꾸고 2칸 띄워서 받아와라
+    // readOnly : 읽기 전용
+   </div>
+  );
+};
+export default App;
+
+axios로 api 호출해서 데이터 받아오기(가독성 bb)
+const App = () => {
+  const [data, setData] = useState(null);
+  const onClick = async() =>{ // 눌렀을때 async: 비동기로
+   try{
+    const response = await axios.get( 
+     'https://jsonplaceholder.typicode.com/todos',
+    );
+    setData(response.data); // data에 setData써서 업데이트해라
+   }catch(e){ // 안되면 오류값 보내라 console.log(e);}};
+NewsItem.js : 각 뉴스 정보 보여주는 컴포넌트
+NewsList.js : API 요청 -> 뉴스 데이터가 들어있는 배열 -> 컴포넌트 배열로 바꾼 후 렌더
+링 시키는 컴포넌트
+
+const sampleArticle = {
+   title:'제목',
+   description: '내용',
+   url:'https://google.com',
+   urlToImage:'https://via.placeholder.com/160',};
+const NewsList = () => {
+   return (
+     <NewsListBlock><NewsItem article={sampleArticle}/>...</NewsListBlock>
+   );
+};
+
+const NewsItem = ({article}) => {
+   const {title, description, url, urlToImage} =article;
+   return (
+     <NewsItemBlock> 
+       {urlToImage &&( //렌더링 됐을 때 참 
+     // urlToImage가 제일 크기 큼-> 제일 느림 -> 얘가 들어오면 나머지 다 들어옴 
+         <div className='thumbnail'>
+           <a href={url} target="_blank" rel='noopener noreferrer'>
+             <img src={urlToImage} alt='thumbnail'/>
+           </a>
+         </div>
+       )}
+       <div className='contents'>
+         <h2>
+           <a href={url} target="_blank" rel='noopener noreferrer'>
+             {title}
+           </a>
+         </h2>
+         <p>{description}</p>
+       </div>
+     </NewsItemBlock>);};
+
+------------------------------------------------------------------------------------------------------- 
+  
+noopener : 웹 사이트의 보안을 강화하고 다른 웹 사이트가 브라우저 세션을 통해 페이지
+에 엑세스 하는 것을 방지해준다
+
+noreferrer : 추천 정보가 대상 웹사이트로 전달되지 않도록 보호하는데 사용. google 웹 
+로그 분석에서 추천 트래픽을 숨김
+
+a태그에서 target="_blank"로 새로운 페이지로 새 창 열기를 할 때 보안상의 취약한 점이 
+생기고 퍼포먼스가 떨어지는 문제가 발생하는데 이 두가지의 문제를 해결하기 위한 방법
+으로 사용됨.
+
+data를 map함수 사용하여 배열로 반환할 때 주의사항
+map함수를 사용하기전에 꼭 !artilcles를 조회하여 해당 값이 현재 null이 아닌지를 검사해야 
+한다. 이걸 안하면 아직 데이터가 없을 때 null에는 map함수가 없어서 렌더링 과정에서 오
+류발생 -> 흰 페이지만 보임
+articles 설정되지 않은 상태에서 map을 돌리면 x, 객체 그대로인 null반환, 유호할 때 넘김
+
+-------------------------------------------------------------------------------------------------------
+  
+const NewsList = () => {
+  const [articles, setArticles] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { // mount + update -> 부르면 데이터 불러들여와라
+   // async를 사용하는 함수 따로 선언
+   const fetchData = async () => { // 비동기로
+    setLoading(true);
+    try {
+     const response = await axios.get( // 비동기로 받아서 await, 
+					    // axios가 get써서 data
+     'https://newsapi.org/v2/top-headlines?country=us&apiKey=9ff3509623e8	422ba8b8ddecc516e6bc'
+     );
+     setArticles(response.data.articles); // data받아서 articles에
+    } catch (e) {console.log(e); }
+    setLoading(false);
+   };
+   fetchData();
+  }, []);
+  if (loading) {  // 대기중일 때, articles값 false
+   return <NewsListBlock>대기 중...</NewsListBlock>;
+  }
+  if (!articles) { // 아직 articles 값이 설정되지 않았을 때, articles값 true
+   return null;
+  }
+  
+  return ( //articles 값이 유효할 때
+   <NewsListBlock>
+    {articles.map((article) => ( // data를 map함수 사용할 때 주의사항
+     // map은 처리속도가 넘 빨라서 acticles보다 빨리 만들어질수도있음
+     <NewsItem key={article.url} article={article} />
+    ))}
+   </NewsListBlock>);};
+  
+-------------------------------------------------------------------------------------------------------
+
+카테고리 영어 <---> 한글로 바꾸기
+const Categories = () => {
+   return (
+    <CategoriesBlock>
+        {categories.map(c =>(
+          <Category key={c.name}>{c.text}</Category>
+          // map때문에 key 값 name -> 한글로보이게
+        ))}
+      </CategoriesBlock>
+    )
+  }
+  
+  export default Categories;
+
+카테고리 누르면 내용 나오기
+onClick : 마우스 버튼을 누르는 동작에 반응
+onSelect : 텍스트나 콘텐츠가 선택 되었을 때에 대한 반응
+const App = () => {
+  const [category, setCategory] = useState('all'); // 초기값 all로 변환 why? 영어로 인식해야댐
+  const onSelect = useCallback(category => setCategory(category),[]);
+
+  return(
+   <div>
+    <Categories category={category} onSelect={onSelect}/> 
+    <NewsList/> category={category}
+   </div>
+  ) // onSelect는 선택하면 카테고리 내용 부르도록 하는 함수
+};
+  
+-------------------------------------------------------------------------------------------------------
+
+카테고리 누르면 반응
+const Categories = ({category,onSelect}) => {
+				...
+<Category key={c.name}
+          active = {category === c.name} 
+          onClick={() => onSelect(c.name)}>{c.text}</Category>
+}
+ ${props =>
+   props.active &&css`
+   font-weight: 600;
+   border-bottom: 2px solid #22b8cf;
+   color: #22b8cf;
+   &:hover {
+    color: #3bc9db;
+   }
+   `}
+
+  &+ &{
+   margin-left: 1rem;
+  };
+-------------------------------------------------------------------------------------------------------
+try~catch
+promise에서 어쩌고
+const NewsList = ({ category }) => {
+   const [articles, setArticles] = useState(null);
+   const [loading, setLoading] = useState(false);
+  
+   useEffect(() => { // mount + update  -> 부르면 데이터 불러들여와라
+    // async를 사용하는 함수 따로 선언
+    const fetchData = async () => {
+     setLoading(true);
+     try {
+      const query = category === 'all' ? '' : `&category=${category}`;
+      // category가 all이면 비어져 있어야 함, 아니면 category받기
+      const response = await axios.get( // 비동기로 받아서 await, axios가 get써서 data
+       `https://newsapi.org/v2/top-headlines?country=us${query}&apiKey=9ff3509623e8422ba8b8ddecc516e6bc`
+      ); // https앞에 백틱줘야 한다
+      setArticles(response.data.articles); // data받아서 articles에
+     } catch (e) {
+      console.log(e);
+     }
+     setLoading(false);
+    };
+    fetchData();
+   }, [category]);
