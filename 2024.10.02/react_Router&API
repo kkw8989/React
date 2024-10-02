@@ -1,0 +1,196 @@
+Router 기능 사용
+app을 감싸고 있는 index 드가서 <BrowserRouter> <App/> </BrowserRouter>
+
+1.비즈니스, 과학 누르면 주소창 파라미터에 buisness 들어가게 -> 멀티페이지처럼 보이게
+
+const NewsPage = () => {
+   const params = useParams(); // 주소처리 훅
+   const category = params.category || 'all'; 
+   category에 text없으면 = false -> all이 category에 드감
+  비즈니스나 과학 누르면 주소창 파라미터에 buisness 드감-> 멀티페이지처럼 보이게
+   return (
+     <>
+       <Categories/>
+       <NewsList category={category}/>
+     </>
+   );
+};const App = () => {
+ return(
+   <Routes>
+     <Route path="/" element={<NewsPage/>}/>
+     <Route path="/:category" element={<NewsPage/>}/>
+   </Routes>
+ );
+};
+ 
+2. 파라미터에 들어가면 다르게 선택되게
+Router 설치해서 Nav링크를 통해 활성화돼서 꾸며지게 
+const CategoriesBlock = styled.div`
+const Category = styled(NavLink)
+// 기존 div태그가 아니라 NavLink는 dom에 있는게 x = 내께 아니라 () 씀
+
+const Categories = ({category,onSelect}) => {
+    <Category key={c.name} // Nav링크 사용
+       className={({isActive}) => (isActive ? 'active' : undefined)}  추가
+       to={c.name === 'all' ? '/' : `/${c.name}`} 추가
+       >{c.text}</Category>
+// NavLink key=sports=c.name
+// classname='active'
+// to = all이랑 다르니까 to=/sports들어감 ‘
+onSelctor 필요x, NavLink가 다해줌
+
+최종
+
+-------------------------------------------------------------------------------------------------------
+
+Context API(전역에서 관리)
+context API : 전역 상태 관리
+환경 설정, 사용자 정보, 장바구니 etc)
+react16.3 이후 별도의 라이브러리 없어도 전역
+상태 쉽게 관리 O 
+Context API를 사용하면 context를 만들어 단 한번에 원하는 값을 받아와서 사용 O
+App->A->B->E->G, App->H->J-> : 비효율
+
+color.js
+import { createContext } from "react";
+
+const ColorContext = createContext({color:"black"});  color : 고정된 값
+
+export default ColorContext;
+
+ColorBox.js
+import ColorContext from "../contexts/color"
+
+const ColorBox = () => {
+   return(
+     <ColorContext.Consumer> Consumer써서 ColorContext에 접근
+       {(value) => (
+         <div style={{
+             witdh:'64px',
+             height:'64px',
+             background:value.color
+           }}
+         />
+       )}
+     </ColorContext.Consumer>
+   );
+};
+
+
+Consumer는 컴포넌트처럼 사용O, 여러개의 context를 사용하고 Consume를 활용하면 코드
+는 복잡해지지만 렌더링 최소화 할 수 있다.
+
+아래 Function as a child, Render props 패턴 -> 아 그렇구나
+ 
+const RenderPropsSample = ({children}) =>{	children 키워드 사용
+    return <div>결과 : {children(5)}</div>
+}
+
+export default RenderPropsSample;
+
+<RenderPropsSample>{
+value => 2* value}</RenderPropsSample>
+
+-------------------------------------------------------------------------
+
+Provider를 사용하면 contex의 value 변경O
+const App = () => {
+  return(
+   <ColorContext.Provider value={{color:'red'}}>
+     <div>
+       <ColorBox/>
+     </div>
+   </ColorContext.Provider>
+  );
+
+color를 동적으로 
+const ColorContext = createContext({
+   state: {color:'black', subcolor:'red'},
+   actions:{
+     setColor:()=>{},
+     setSubcolor:()=>{}
+   }
+});
+const ColorProvider = ({children}) =>{
+   const[color, setColor] = useState('black'); // color: black
+   const[subcolor, setSubcolor] = useState('red'); // color: red
+
+   const value={
+     state: {color, subcolor}, //black, red
+     actions:{setColor, setSubcolor} 
+   };
+   return(
+     // Provider로 내부 바꾼다 
+<ColorContext.Provider value={value}>{children}</ColorContext.Provider>
+   )
+}
+// const ColorCunsumer = ColorContext.Cunsumer와 같은 의미
+// ColorContext의 속성 Consumer의 이름을 ColorCunsumer로 사용하겠다
+const {Consumer:ColorCunsumer} = ColorContext;
+// 변경:colorProvider와 조회:colorConsumer 내보내기
+export {ColorProvider, ColorCunsumer};
+색상선택 및 색깔 바꾸기 
+const ColorBox = () => { 
+   return(
+     <ColorCunsumer>
+       {({state}) => ( // color.js -> ColorContex -> state 받아옴
+         <>
+         <div style={{
+             width:'64px',
+             height:'64px',
+             background:state.color
+           }}
+         />
+         <div style={{
+             width:'32px',
+             height:'32px',
+             background:state.subcolor,
+           }}
+         />
+         </>
+       )}
+     </ColorCunsumer>
+   );
+};
+const SelectColors = () => {
+  return (
+   <div>
+    <h2>색상을 선택하세요.</h2>
+    <ColorConsumer>
+     {({ actions }) => (
+      <div style={{ display: "flex" }}>
+       {colors.map((color) => (
+        <div
+         key={color}
+         style={{
+          background: color,
+          width: "24px",
+          height: "24px",
+          cursor: "pointer",
+         }}
+         onClick={() => actions.setColor(color)}
+	  // 우클릭 했을때
+         onContextMenu={(e) => {
+          e.preventDefault(); // 메뉴 뜨는거 방지
+          actions.setSubcolor(color);
+         }}
+        />
+       ))}
+      </div>
+     )}
+    </ColorConsumer>
+    <hr />
+   </div>
+  );
+};
+-------------------------------------------------------------------------
+
+useContext사용
+
+  const ColorBox = () => {
+  const {state} = useContext(ColorContext); 추가
+  return (
+     <>
+  );                               ...
+};
+-------------------------------------------------------------------------
